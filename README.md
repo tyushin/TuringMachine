@@ -1,1 +1,1 @@
-#Turing machine with one-sided tape
+Turing machine with one-sided tape.
