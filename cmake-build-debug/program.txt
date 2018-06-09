@@ -1,0 +1,7 @@
+Aq1-Bq1R
+Bq1-Cq1R
+ q1-Sq2R
+ q2-Sq3R
+ q3-Jq3L
+Sq3-Eq0L
+Sq0- q4R
