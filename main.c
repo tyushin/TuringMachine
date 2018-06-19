@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define MAXCOMMAND 256
 
 typedef struct _progr {
     char inputsymb; //Входной символ
@@ -154,6 +153,7 @@ int main(void) {
     int numberSteps;
     int headstate = 1, len = 0, c = 0, tapelength = 0, i = 0, b = 0;
     long size = 0;
+    int progCount;
     char line[100];
     char bufferLine[255];
     char *firstpc;
@@ -161,7 +161,7 @@ int main(void) {
     char *token;
     //char *buf; //Массив для хранения алфавита считываемого из файла
 
-    progr arr[MAXCOMMAND]; //Массив стуктуры для записи программы
+    progr *arr; //Массив стуктуры для записи программы
 
     printf("Enter the number of steps (full = 0):");
     scanf("%d", &numberSteps);
@@ -195,6 +195,12 @@ int main(void) {
         printf("End simulation");
         exit(0);
     }
+    progCount = 0;
+    while (fgets(line, 100, prog) != NULL) {
+        progCount++; //считаем переносы (сколько переносов столько и комманд)
+    }
+    arr = (progr*)malloc(progCount* sizeof(progr)); //инициализируем массив комманд
+    fseek(prog,0,SEEK_SET);
     i = 0;
     while (fgets(line, 100, prog) != NULL) {
         if (sscanf(line,"%cq%d-%cq%d%c\n", &(arr[i].inputsymb), &(arr[i].state), &(arr[i].outputsymb), &(arr[i].newstate), &(arr[i].action)) >= 0) {
