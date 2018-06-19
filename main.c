@@ -43,7 +43,8 @@ void deleteLinkedList(LinkedList *list) {
 void addToList(LinkedList *list, char value) {
     Item *tmp = (Item*)malloc(sizeof(Item));
     if (tmp == NULL) {
-        printf("No more free memory for tape!");
+        printf("No more free memory for tape! \n");
+        printf("End simulation");
         exit(0);
     }
     tmp->value = value;
@@ -77,7 +78,7 @@ void printLinkedList(LinkedList *list, char separator, FILE *outputfile) {
 }
 
 /*Операция над лентой(алфавитом)*/
-void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int debug) {
+void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int startPosition, int debug) {
     int stop = 0; //Переменная останова
     int headstate = 1; //Состояние головки
     int commandfound; //Была ли найдена комманда
@@ -87,6 +88,13 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
     int i = 0; //Переменные для счетчика
     Item *tmp; //Переменная ссылающаяся на структуру _Raw
     tmp = list->head; //Присвоение переменной ссылки на Head в списке list
+    while (startPosition > 0){
+        if (tmp->next == NULL) { // лента - бесконечная значит надо увеличить
+            addToList(list, ' ');
+        }
+        tmp = tmp->next;
+        startPosition--;
+    }
     if (numberSteps == 0){
         numberSteps = -1;
     }
@@ -123,7 +131,8 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
                     case 'L': {
                         if (tmp->prev == NULL) { // выход за границу ленты
                             printf("Out-of-tape ERROR \n");
-                            _Exit (0);
+                            printf("End simulation");
+                            exit(0);
                         }
                         tmp = tmp->prev;
                         break;
@@ -151,6 +160,7 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
 int main(void) {
     LinkedList *tape = createLinkedList(); //Инициализация списка
     int numberSteps;
+    int startPosition;
     int headstate = 1, len = 0, c = 0, tapelength = 0, i = 0, b = 0;
     long size = 0;
     int progCount;
@@ -159,22 +169,20 @@ int main(void) {
     char *firstpc;
     char *secpc;
     char *token;
-    //char *buf; //Массив для хранения алфавита считываемого из файла
-
     progr *arr; //Массив стуктуры для записи программы
 
     printf("Enter the number of steps (full = 0):");
     scanf("%d", &numberSteps);
+    printf("Еnter the starting position (first = 0):");
+    scanf("%d", &startPosition);
     /*Заполнение ленты из файла*/
     FILE *fp = fopen("tape.txt", "r"); //Открытие файла
     if (fp == NULL){
-        printf("Cant open file with tape");
+        printf("Cant open file with tape \n");
         printf("End simulation");
         exit(0);
     }
     fseek(fp, 0, SEEK_END); //Проход до конца файла
-    // size = ftell(fp); //Узнаем размер файла   байтах
-    // buf = (char*)malloc(size * sizeof(char)); //Динамическое выделение памяти под массив хранения ленты
     rewind(fp); //Возвращение к началу файла
     while (!feof(fp)) { //До тех пор пока не будет достигнут конец файла
         char tapeChar;
@@ -182,16 +190,12 @@ int main(void) {
         addToList(tape, tapeChar);
         tapelength++; //Переход на следующий элемент массива
     }
-
-//    for (i = 0; i < size; i++) { // конец файла
-//        addToList(tape, buf[i]);
-//    }
     fclose(fp);
 
     /*Извлечение программы из файла*/
     FILE *prog = fopen("program.txt", "r");
     if (prog == NULL){
-        printf("Cant open file with program");
+        printf("Cant open file with program \n");
         printf("End simulation");
         exit(0);
     }
@@ -207,7 +211,7 @@ int main(void) {
             printf("%cq%d-%cq%d%c\n", arr[i].inputsymb, arr[i].state, arr[i].outputsymb, arr[i].newstate, arr[i].action);
         }
         else {
-            printf("Error reading command. Line: %s has bad formating", line);
+            printf("Error reading command. Line: %s has incorrect format \n", line);
             printf("End simulation");
             exit(0);
         }
@@ -220,12 +224,12 @@ int main(void) {
     printLinkedList(tape, ' ', NULL);
     printf("Tape length %d\n", tape->length);
 
-    turing(tape, arr, i, numberSteps, 1);
+    turing(tape, arr, i, numberSteps, startPosition, 1);
     printf("Result: ");
     printLinkedList(tape, ' ', NULL);
     FILE *result = fopen("result.txt", "wb");
     if (result == NULL){
-        printf("Cant open file with result");
+        printf("Cant open file with result \n");
         printf("End simulation");
         exit(0);
     }
