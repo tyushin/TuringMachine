@@ -45,7 +45,7 @@ void addToList(LinkedList *list, char value) {
     Item *tmp = (Item*)malloc(sizeof(Item));
     if (tmp == NULL) {
         printf("No more free memory for tape!");
-        exit;
+        exit(0);
     }
     tmp->value = value;
     tmp->next = NULL;
@@ -130,14 +130,19 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
                         break;
                     } //При команде L сдвигается на предыдущий элемент в списке
                     case 'S': { break;} //При команде S остается на месте
-                    default: { stop = 1; printf("unknown command: %c", arr[i].action); }
+                    default: {
+                        printf("unknown command: %c \n", arr[i].action);
+                        printf("End simulation");
+                        exit(0);
+                    }
                 }
                 break;
             }
         }
         if(commandfound!=1) {
-            stop = 1;
-            printf("No command found for charter %c", tmp->value);
+            printf("No command found for charter %c \n", tmp->value);
+            printf("End simulation");
+            exit(0);
         }
     }
     printf("\n");
@@ -154,7 +159,7 @@ int main(void) {
     char *firstpc;
     char *secpc;
     char *token;
-    char *buf; //Массив для хранения алфавита считываемого из файла
+    //char *buf; //Массив для хранения алфавита считываемого из файла
 
     progr arr[MAXCOMMAND]; //Массив стуктуры для записи программы
 
@@ -162,29 +167,43 @@ int main(void) {
     scanf("%d", &numberSteps);
     /*Заполнение ленты из файла*/
     FILE *fp = fopen("tape.txt", "r"); //Открытие файла
+    if (fp == NULL){
+        printf("Cant open file with tape");
+        printf("End simulation");
+        exit(0);
+    }
     fseek(fp, 0, SEEK_END); //Проход до конца файла
-    size = ftell(fp); //Узнаем размер файла   байтах
-    buf = (char*)malloc(size * sizeof(char)); //Динамическое выделение памяти под массив хранения ленты
+    // size = ftell(fp); //Узнаем размер файла   байтах
+    // buf = (char*)malloc(size * sizeof(char)); //Динамическое выделение памяти под массив хранения ленты
     rewind(fp); //Возвращение к началу файла
     while (!feof(fp)) { //До тех пор пока не будет достигнут конец файла
-        fscanf(fp, "%c", &buf[tapelength]); //По одному символу будет записыватся в массив
+        char tapeChar;
+        fscanf(fp, "%c", &tapeChar); //По одному символу будет записыватся в массив
+        addToList(tape, tapeChar);
         tapelength++; //Переход на следующий элемент массива
     }
 
-    for (i = 0; i < size; i++) { // конец файла
-        addToList(tape, buf[i]);
-    }
+//    for (i = 0; i < size; i++) { // конец файла
+//        addToList(tape, buf[i]);
+//    }
     fclose(fp);
 
     /*Извлечение программы из файла*/
     FILE *prog = fopen("program.txt", "r");
+    if (prog == NULL){
+        printf("Cant open file with program");
+        printf("End simulation");
+        exit(0);
+    }
     i = 0;
     while (fgets(line, 100, prog) != NULL) {
         if (sscanf(line,"%cq%d-%cq%d%c\n", &(arr[i].inputsymb), &(arr[i].state), &(arr[i].outputsymb), &(arr[i].newstate), &(arr[i].action)) >= 0) {
             printf("%cq%d-%cq%d%c\n", arr[i].inputsymb, arr[i].state, arr[i].outputsymb, arr[i].newstate, arr[i].action);
         }
         else {
-            printf("Ошибка чтения комманды строка: %s не соответствует формату )", line);
+            printf("Error reading command. Line: %s has bad formating", line);
+            printf("End simulation");
+            exit(0);
         }
         i++;
     }
@@ -199,6 +218,11 @@ int main(void) {
     printf("Result: ");
     printLinkedList(tape, ' ', NULL);
     FILE *result = fopen("result.txt", "wb");
+    if (result == NULL){
+        printf("Cant open file with result");
+        printf("End simulation");
+        exit(0);
+    }
     printLinkedList(tape, ' ', result);
     fclose(result);
 
