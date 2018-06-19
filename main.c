@@ -157,7 +157,7 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
 }
 
 /*main*/
-int main(void) {
+int main(int argc, char * argv[]) {
     LinkedList *tape = createLinkedList(); //Инициализация списка
     int numberSteps;
     int startPosition;
@@ -176,7 +176,7 @@ int main(void) {
     printf("Еnter the starting position (first = 0):");
     scanf("%d", &startPosition);
     /*Заполнение ленты из файла*/
-    FILE *fp = fopen("tape.txt", "r"); //Открытие файла
+    FILE *fp = fopen(argv[1], "r"); //Открытие файла
     if (fp == NULL){
         printf("Cant open file with tape \n");
         printf("End simulation");
@@ -193,7 +193,7 @@ int main(void) {
     fclose(fp);
 
     /*Извлечение программы из файла*/
-    FILE *prog = fopen("program.txt", "r");
+    FILE *prog = fopen(argv[2], "r");
     if (prog == NULL){
         printf("Cant open file with program \n");
         printf("End simulation");
