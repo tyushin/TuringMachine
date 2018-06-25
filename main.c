@@ -3,7 +3,6 @@
 
 typedef struct _progr {
     char inputsymb; //Входной символ
-    int state; //Начальное состояние
     char outputsymb; //Символ на выходе
     int newstate; //Новое состояние
     char action; //Действие
@@ -42,11 +41,11 @@ void deleteLinkedList(LinkedList *list) {
 
 void addToList(LinkedList *list, char value) {
     Item *tmp = (Item*)malloc(sizeof(Item));
-    if (tmp == NULL) {
-        printf("No more free memory for tape! \n");
-        printf("End simulation");
-        exit(0);
-    }
+        if (tmp == NULL) {
+            printf("No more free memory for tape! \n");
+            printf("End simulation");
+            exit(0);
+        }
     tmp->value = value;
     tmp->next = NULL;
     tmp->prev = list->tail;
@@ -78,7 +77,7 @@ void printLinkedList(LinkedList *list, char separator, FILE *outputfile) {
 }
 
 /*Операция над лентой(алфавитом)*/
-void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int startPosition, int debug) {
+void turing(LinkedList *list, struct _progr arr[], int maxRepeat, int numberSteps, int startPosition, int debug) {
     int stop = 0; //Переменная останова
     int headstate = 1; //Состояние головки
     int commandfound; //Была ли найдена комманда
@@ -98,18 +97,20 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
     if (numberSteps == 0){
         numberSteps = -1;
     }
+    int position;
     while (tmp != NULL && stop != 1 && numberSteps!=0) {
         commandfound = 0;
         numberSteps--;
-        for (i = 0; i < cmd; i++) {
+        for (i = 0; i < maxRepeat; i++) {
             temp = tmp->value; //Присвоение переменной - значения лежащей в Head списка list
-            if (temp == arr[i].inputsymb && headstate == arr[i].state) {
+            position = (headstate-1)*maxRepeat + i;
+            if (temp == arr[position].inputsymb) {
                 commandfound = 1;
                 if (debug) {
-                    printf("Command: %cq%d-%cq%d%c\n", arr[i].inputsymb, arr[i].state, arr[i].outputsymb, arr[i].newstate, arr[i].action);
+                    printf("Command: %cq%d-%cq%d%c\n", arr[position].inputsymb, headstate, arr[position].outputsymb, arr[position].newstate, arr[position].action);
                 }
-                replace_symb = arr[i].outputsymb;
-                headstate = arr[i].newstate;
+                replace_symb = arr[position].outputsymb;
+                headstate = arr[position].newstate;
 
                 if (headstate == 0) {
                     stop = 1;
@@ -120,7 +121,7 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
                     printf("TapeState: ");
                     printLinkedList(list, ' ', NULL);
                 }
-                switch (arr[i].action) {
+                switch (arr[position].action) {
                     case 'R': {
                         if (tmp->next == NULL) { // лента - бесконечная значит надо увеличить
                             addToList(list, ' ');
@@ -139,7 +140,7 @@ void turing(LinkedList *list, struct _progr arr[], int cmd, int numberSteps, int
                     } //При команде L сдвигается на предыдущий элемент в списке
                     case 'S': { break;} //При команде S остается на месте
                     default: {
-                        printf("unknown command: %c \n", arr[i].action);
+                        printf("unknown command: %c \n", arr[position].action);
                         printf("End simulation");
                         exit(0);
                     }
@@ -163,7 +164,6 @@ int main(int argc, char * argv[]) {
     int startPosition;
     int headstate = 1, len = 0, c = 0, tapelength = 0, i = 0, b = 0;
     long size = 0;
-    int progCount;
     char line[100];
     char bufferLine[255];
     char *firstpc;
@@ -199,21 +199,54 @@ int main(int argc, char * argv[]) {
         printf("End simulation");
         exit(0);
     }
-    progCount = 0;
+    int progCount = 0;
+    int maxState = 0;
+    int nowState;
+    int equalState = 0;
+    int repeat = 0;
+    int maxRepeat = 0;
     while (fgets(line, 100, prog) != NULL) {
-        progCount++; //считаем переносы (сколько переносов столько и комманд)
-    }
-    arr = (progr*)malloc(progCount* sizeof(progr)); //инициализируем массив комманд
-    fseek(prog,0,SEEK_SET);
-    i = 0;
-    while (fgets(line, 100, prog) != NULL) {
-        if (sscanf(line,"%cq%d-%cq%d%c\n", &(arr[i].inputsymb), &(arr[i].state), &(arr[i].outputsymb), &(arr[i].newstate), &(arr[i].action)) >= 0) {
-            printf("%cq%d-%cq%d%c\n", arr[i].inputsymb, arr[i].state, arr[i].outputsymb, arr[i].newstate, arr[i].action);
+        if (sscanf(line,"%*cq%d-%*cq%*d%*c\n",&(nowState)) >= 0) {
+            if (nowState != equalState){
+                equalState = nowState;
+                if (repeat > maxRepeat){
+                    maxRepeat = repeat;
+                }
+                repeat = 0;
+            }
+            if (maxState < nowState){
+                maxState = nowState;
+            }
         }
         else {
             printf("Error reading command. Line: %s has incorrect format \n", line);
             printf("End simulation");
             exit(0);
+        }
+        repeat++;
+        progCount++; //считаем переносы (сколько переносов столько и комманд)
+    }
+    arr = (progr*)malloc((maxState*maxRepeat)* sizeof(progr)); //инициализируем массив комманд
+    if (arr == NULL) {
+        printf("No more free memory for program! \n");
+        printf("End simulation");
+        exit(0);
+    }
+    fseek(prog,0,SEEK_SET);
+    nowState = 0;
+    equalState = 0;
+    i = 0;
+    int position;
+    while (fgets(line, 100, prog) != NULL) {
+        if (sscanf(line,"%*cq%d-%*cq%*d%*c\n", &nowState) >= 0) {
+            if (nowState!= equalState){
+                equalState = nowState;
+                i = 0;
+            }
+        }
+        position = (nowState - 1)*maxRepeat + i;
+        if (sscanf(line,"%cq%*d-%cq%d%c\n", &(arr[position].inputsymb), &(arr[position].outputsymb), &(arr[position].newstate), &(arr[position].action)) >= 0) {
+            printf("%cq%d-%cq%d%c\n", arr[position].inputsymb, nowState, arr[position].outputsymb, arr[position].newstate, arr[position].action);
         }
         i++;
     }
@@ -224,7 +257,7 @@ int main(int argc, char * argv[]) {
     printLinkedList(tape, ' ', NULL);
     printf("Tape length %d\n", tape->length);
 
-    turing(tape, arr, i, numberSteps, startPosition, 1);
+    turing(tape, arr, maxRepeat, numberSteps, startPosition, 1);
     printf("Result: ");
     printLinkedList(tape, ' ', NULL);
     FILE *result = fopen("result.txt", "wb");
@@ -235,7 +268,7 @@ int main(int argc, char * argv[]) {
     }
     printLinkedList(tape, ' ', result);
     fclose(result);
-
+    free(arr);
     deleteLinkedList(tape);
     system("pause");
 }
