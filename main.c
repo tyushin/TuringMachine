@@ -199,7 +199,6 @@ int main(int argc, char * argv[]) {
         printf("End simulation");
         exit(0);
     }
-    int progCount = 0;
     int maxState = 0;
     int nowState;
     int equalState = 0;
@@ -224,7 +223,6 @@ int main(int argc, char * argv[]) {
             exit(0);
         }
         repeat++;
-        progCount++; //считаем переносы (сколько переносов столько и комманд)
     }
     arr = (progr*)malloc((maxState*maxRepeat)* sizeof(progr)); //инициализируем массив комманд
     if (arr == NULL) {
